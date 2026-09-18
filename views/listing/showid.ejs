@@ -3,20 +3,34 @@
 <body>
   <div class="card mb-3 col-8">
     <img src="<%= list.image.url %>" class="card-img-top" alt="list image" style="width: 18rem" />
+    <p class="fst-italic ps-3">
+      <%= list.owner.username %>
+    </p>
   </div>
 
   <div class="id-info">
     <h3>
-      welcome to <u><i><%= list.title %></i></u>
+      welcome to
+      <u><i>
+          <%= list.title %>
+        </i></u>
     </h3>
-    <p><%= list.description %></p>
+    <p>
+      <%= list.description %>
+    </p>
     <p>&#8377; <%= list.price.toLocaleString('en-IN') %> / night-</p>
-    <p><%= list.location %></p>
-    <p><%= list.country %></p>
+    <p>
+      <%= list.location %>
+    </p>
+    <p>
+      <%= list.country %>
+    </p>
     <br />
   </div>
 
   <div class="list-features">
+    <% if ( currUser && (currUser._id.equals(list.owner._id))) { %>
+    <!-- currUser before accessing it -->
     <form action="/listing/<%= list._id %>/edit" method="get">
       <button class="btn">
         <i class="fa-regular fa-pen-to-square"></i>EDIT
@@ -25,28 +39,56 @@
     <form action="/listing/<%= list._id %>?_method=DELETE" method="post">
       <button class="btn"><i class="fa-solid fa-trash"></i>DELETE</button>
     </form>
+    <% } %>
   </div>
   <hr />
 
+  <% if (list.reviews.length) { %>
   <h4>All review</h4>
-  <div class="show-reviews row">
+  <div class="show-reviews grid row">
     <% for(let review of list.reviews) { %>
     <div class="card-body border border-2 col-4 m-2 rounded">
-      <p class="card-text p-2"><%= review.comment %> ,<%= review.rating %><i class="fa-solid fa-star"></i></p>
+      <p class="mt-3 ms-3 text-muted">#<%= review.author.username %></p>
+      <p class="starability-result mt-0" data-rating="<%= review.rating %>">
+      </p>
+      <p class="card-text ps-4">
+        <%= review.comment %>
+      </p>
+      <% if ( currUser && review.author && currUser.equals(review.author)) { %>
       <form action="/listing/<%= list._id %>/review/<%= review._id %>?_method=DELETE" method="post">
-        <button class="btn btn-sm btn-dark">Delete</button>
+        <button class="btn btn-sm btn-dark mb-2 ms-2">Delete</button>
       </form>
+      <% } %>
+
     </div>
     <% } %>
   </div>
+  <% } %>
 
+
+  <% if (currUser) { %>
   <div class="review row">
     <form action="/listing/<%= list._id %>/review" method="post" novalidate class="needs-validation">
-      <div class="mb-3 mt-3">
-        <label for="rating" class="form-label">Rating</label><br />
-        <input type="range" class="form-range" name="review[rating]" step="1" min="1" max="5" />
-      </div>
 
+      <label for="rating" class="form-label">Rating Us</label>
+      <fieldset class="starability-grow" required>
+        <input type="radio" id="no-rate" class="input-no-rate" name="review[rating]" value="0" checked aria-label="No rating." />
+        <input type="radio" id="first-rate1" name="review[rating]" value="1" />
+        <label for="first-rate1" title="Terrible">1 star</label>
+
+        <input type="radio" id="first-rate2" name="review[rating]" value="2" />
+        <label for="first-rate2" title="Not good">2 stars</label>
+
+        <input type="radio" id="first-rate3" name="review[rating]" value="3" />
+        <label for="first-rate3" title="Average">3 stars</label>
+
+        <input type="radio" id="first-rate4" name="review[rating]" value="4" />
+        <label for="first-rate4" title="Very good">4 stars</label>
+
+        <input type="radio" id="first-rate5" name="review[rating]" value="5" />
+        <label for="first-rate5" title="Amazing">5 stars</label>
+
+      </fieldset>
       <div class="mb-3 mt-3">
         <label for="comment" class="form-label">Comment</label><br />
         <textarea name="review[comment]" placeholder="Review here..." class="form-control" rows="3" cols="40" required></textarea>
@@ -55,4 +97,6 @@
       <button class="btn btn-outline-dark">Submit</button>
     </form>
   </div>
+  <% } %>
+
 </body>

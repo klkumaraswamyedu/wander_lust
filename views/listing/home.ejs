@@ -1,18 +1,106 @@
 <% layout('/layouts/boilerplate') %>
+
+
+<div id="filter" class="d-flex justify-content-center align-items-center me-3">
+
+  <div class="filter">
+    <div class="text-center"><i class="fa-solid fa-fire"></i></div>
+    <p>Trendings</p>
+  </div>
+
+  <div class="filter">
+    <div class="text-center"><i class="fa-solid fa-bed"></i></i></div>
+    <p>Rooms</p>
+  </div>
+
+  <div class="filter">
+    <div class="text-center"><i class="fa-solid fa-mountain"></i></div>
+    <p>Mountains</p>
+  </div>
+
+  <div class="filter">
+    <div class="text-center"><i class="fa-solid fa-person-swimming"></i></div>
+    <p>Pool</p>
+  </div>
+
+  <div class="filter">
+    <div class="text-center"><i class="fa-brands fa-fort-awesome"></i></div>
+    <p>Castle</p>
+  </div>
+
+  <div class="filter">
+    <div class="text-center"><i class="fa-solid fa-tractor"></i></i></div>
+    <p>Farm</p>
+  </div>
+
+  <div class="filter">
+    <div class="text-center"><i class="fa-solid fa-tree"></i></div>
+    <p>Cabin</p>
+  </div>
+  <div class="filter">
+    <div class="text-center"><i class="fa-solid fa-umbrella-beach"></i></div>
+    <p>Beach</p>
+  </div>
+  <div class="filter">
+    <div class="text-center"><i class="fa-solid fa-city"></i></div>
+    <p>City</p>
+  </div>
+
+  <div class="filter">
+    <div class="text-center"><i class="fa-solid fa-snowflake"></i></div>
+    <p>Snow</p>
+  </div>
+
+  <div class="form-switch filter">
+
+    <input class="form-check-input" type="checkbox" value="" id="checkNativeSwitch" switch>
+    <p>Tax Switch</p>
+  </div>
+
+</div>
+
+
 <body>
-    <div class="listing row row-cols-sm-1 row-cols-md-2 row-cols-lg-3 g-4">
-        <% for (let list of data) { %>
-            <!-- The anchor tag wraps the column element cleanly -->
-            <a href="/listing/<%= list._id %>" class="listing-link col  text-dark">
-                <div class="card">
-                    <div class="card-img-overlay"></div>
-                    <img src="<%= list.image.url %>" class="card-img-top" alt="listing_image" style="height:16em;">
-                    <div class="card-body">
-                        <h5 class="card-title"><%= list.title %></h5>
-                        <p class="card-text">₹<%= list.price.toLocaleString('en-IN') %>/night</p>
-                    </div>
-                </div>
-            </a>
-        <% } %>
-    </div>
+  <div class="listing row row-cols-sm-1 row-cols-md-2 row-cols-lg-3 g-4">
+    <% if (!data || data.length === 0) { %>
+      <div class="col-12 text-center my-5 py-5">
+        <h3 class="text-muted"><i class="fa-solid fa-map-location-dot me-2"></i>Place not found</h3>
+        <p class="text-secondary">Try searching with a different keyword or category.</p>
+        <a href="/listing" class="btn btn-outline-danger mt-2">View All Places</a>
+      </div>
+    <% } %>
+    <% for (let list of data) { %>
+    <!-- The anchor tag wraps the column element cleanly -->
+    <a href="/listing/<%= list._id %>" class="listing-link col text-dark">
+      <div class="card">
+        <div class="card-img-overlay"></div>
+        <img src="<%= list.image.url %>" class="card-img-top" alt="listing_image" style="height: 16em" />
+        <div class="card-body">
+          <h5 class="card-title"><%= list.title %></h5>
+          <p class="card-text">
+            ₹<%= list.price.toLocaleString('en-IN') %>/night
+          </p>
+        </div>
+      </div>
+    </a>
+    <% } %>
+  </div>
+  <script>
+    const taxSwitch = document.getElementById("checkNativeSwitch");
+    taxSwitch.addEventListener("click", function() {
+      const listingPrices = document.querySelectorAll(".card-text");
+      listingPrices.forEach((priceElement) => {
+        let priceText = priceElement.textContent;
+        let priceValue = parseFloat(priceText.replace(/[^0-9.-]+/g, ""));
+        if (taxSwitch.checked) {
+          // Add 18% tax
+          priceValue *= 1.18;
+        } else {
+          // Remove tax (assuming original price is stored somewhere)
+          priceValue /= 1.18;
+        }
+        priceElement.textContent = `₹${priceValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/night`;
+      });
+    });
+  </script>
 </body>

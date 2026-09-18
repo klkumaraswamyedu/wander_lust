@@ -1,16 +1,31 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const path = require("path");
 const mongoose = require("mongoose");
 const port = 8080;
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
-const Listing = require("./model/listing");
+//const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+const MONGO_URL = process.env.MONGO_URL;
 const methodOverride = require("method-override");
 const engine = require("ejs-mate");
-const wrapAsync = require("./utils/wrapAsync.js");
+// session packages
+const session = require("express-session");
+const MongoStore = require("connect-mongo").default;
+
+const flash = require("connect-flash");
 const ExpressError = require("./utils/ExpressError.js");
-const Review = require("./model/reviews.js");
-const { listingschema, reviewschema } = require("./schema.js");
+const User = require("./model/user.js");
+
+const listingRouter = require("./route/listing.js");
+const reviewRouter = require("./route/review.js");
+const userRouter = require("./route/user.js");
+
+const passport = require("passport");
+const LocalStatergy = require("passport-local");
+const passportMongooseLocal = require("passport-local-mongoose");
+
+const isLoggedIn = require("./middleware.js");
+const isOwner = require("./middleware.js");
 
 app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "public")));
@@ -27,128 +42,54 @@ async function main() {
   await mongoose.connect(MONGO_URL);
 }
 
-const validateListing = (req, res, next) => {
-  let { error } = listingschema.validate(req.body);
-  if (error) {
-    let errMsg = error.details.map((el) => el.message).join(", ");
-    return next(new ExpressError(400, errMsg));
-  }
-  next();
-};
-
-const validateReview = (req, res, next) => {
-  let { error } = reviewschema.validate(req.body);
-  if (error) {
-    let errMsg = error.details.map((el) => el.message).join(",");
-    console.log(error);
-    return next(new ExpressError(400, errMsg));
-  }
-  next();
-};
-
-app.get("/", (req, res) => {
-  res.send("root working");
+const store = MongoStore.create({
+  mongoUrl: MONGO_URL,
+  crypto: {
+    secret: process.env.SECREAT,
+  },
+  touchAfter: 24 * 3600,
 });
 
-// Index Route
-app.get(
-  "/listing",
-  wrapAsync(async (req, res) => {
-    const data = await Listing.find({});
-    res.render("listing/home.ejs", { data });
-  }),
-);
-
-// New Route (Must be above /:id)
-app.get("/listing/new", (req, res) => {
-  res.render("listing/new.ejs");
+store.on("error", (err) => {
+  console.log(`ERROR on mongodb session store , ${err}`);
 });
 
-// Create Route
-app.post(
-  "/listing",
-  validateListing,
-  wrapAsync(async (req, res) => {
-    const newlisting = new Listing(req.body.listing);
-    await newlisting.save();
-    res.redirect("/listing");
-  }),
-);
+const sessionOption = {
+  store,
+  secret: process.env.SECREAT,
+  resave: false,
+  saveUninitialized: true,
+  cookie: {
+    expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+  },
+};
 
-// Show Route
-app.get(
-  "/listing/:id",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    const list = await Listing.findById(id).populate("reviews");
-    if (!list) {
-      throw new ExpressError(404, "Listing Not Found");
-    }
-    res.render("listing/showid.ejs", { list });
-  }),
-);
+app.use(session(sessionOption));
+app.use(flash());
+app.use(passport.initialize()); //passport got initaialize to every request
+app.use(passport.session()); // to store and identify the same user on single session
+passport.use(new LocalStatergy(User.authenticate()));
 
-// Edit Route
-app.get(
-  "/listing/:id/edit",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    const list = await Listing.findById(id);
-    if (!list) {
-      throw new ExpressError(404, "Listing Not Found");
-    }
-    res.render("listing/editform.ejs", { list });
-  }),
-);
+passport.use(User.createStrategy());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
-// Update Route
-app.put(
-  "/listing/:id",
-  validateListing,
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    let i = await Listing.findByIdAndUpdate(id, { ...req.body });
-    console.log(i);
-    res.redirect(`/listing/${id}`);
-  }),
-);
+app.use((req, res, next) => {
+  res.locals.success = req.flash("success");
+  res.locals.error = req.flash("error");
+  res.locals.currUser = req.user; //this is middleware user to store all wanted content within the session
+  next();
+});
 
-// Delete Route
-app.delete(
-  "/listing/:id",
-  wrapAsync(async (req, res) => {
-    let { id } = req.params;
-    await Listing.findByIdAndDelete(id);
-    res.redirect("/listing");
-  }),
-);
+//all listing route
+app.use("/listing", listingRouter); //listing is router here
 
-//review
-//create route
-app.post(
-  "/listing/:id/review",
-  validateReview,
-  wrapAsync(async (req, res) => {
-    const { id } = req.params;
-    const list = await Listing.findById(req.params.id);
-    let newReview = new Review(req.body.review);
-    list.reviews.push(newReview);
-    await newReview.save();
-    await list.save();
-    res.redirect(`/listing/${id}`);
-  }),
-);
+//all review roure
+app.use("/listing/:id/review", reviewRouter);
 
-//delete review
-app.delete(
-  "/listing/:id/review/:reviewId",
-  wrapAsync(async (req, res) => {
-    let { id, reviewId } = req.params;
-    await Listing.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
-    await Review.findByIdAndDelete(reviewId);
-    res.redirect(`/listing/${id}`);
-  }),
-);
+app.use("/user", userRouter);
 
 // Page Not Found Catch-all
 app.use((req, res, next) => {

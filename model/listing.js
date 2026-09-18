@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const Review = require("./reviews");
+const { required } = require("joi");
 
 const DEFAULT_IMAGE_URL =
   "https://images.unsplash.com/photo-1625244724120-1fd1d34d00f6?v=1";
@@ -34,6 +35,11 @@ const listingSchema = new Schema({
       ref: "Review",
     },
   ],
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
 });
 
 listingSchema.post("findOneAndDelete", async (listing) => {

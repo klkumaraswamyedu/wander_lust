@@ -1,15 +1,75 @@
-<h2>Wander lust</h2>
+<style>
+  .search-bar {
+    background-color: #fdfbf7;
+  }
+
+  .search-bar .btn {
+    opacity: 0.8;
+    color: red;
+    border-radius: 30%;
+  }
+
+  .search-bar .btn:hover {
+    opacity: 1;
+    outline: thin solid red;
+    color: red;
+
+  }
+
+  .search-bar .btn i {
+    display: inline;
+    padding-right: 0.5rem;
+  }
+</style>
+
+<nav class="navbar d-flex ps-3 pe-3" style="height: 60px;">
+  <div class="navbar-brand">
+    <h1>WanderLust</h1>
+  </div>
+  <% if (currUser) { %>
+    <div class="account">
+      <p class="ms-auto">Account <%= currUser.username %>
+      </p>
+    </div>
+    <% } %>
+</nav>
+
 <nav class="navbar navbar-expand-md bg-body-light sticky-top">
-    <div class="container-fluid border-bottom border-top" >
+  <div class="container-fluid border border-body rounded-pill">
     <a class="navbar-brand" href="/listing"><i class="fa-solid fa-compass"></i></a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup"
+      aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
-        <a class="nav-link active" aria-current="page" href="/listing"><i class="fa-solid fa-list"></i>Listing</a>
-        <a class="nav-link" href="/"><i class="fa-solid fa-house"></i>Home</a>
+        <a class="nav-link active" aria-current="page" href="/listing">
+          <i class="fa-solid fa-list"></i>Listing
+        </a>
         <a class="nav-link" href="/listing/new"><i class="fa-solid fa-plus"></i>Add places</a>
+      </div>
+
+      <!-- search bar -->
+      <form class="search-bar d-flex ms-5" role="search" action="/listing/search" method="GET">
+        <select class="form-select me-2" name="searchType" style="width: auto; border-radius: 20px;">
+          <option value="country">Country</option>
+          <option value="title">Title</option>
+          <option value="location">Place</option>
+        </select>
+        <input class="form-control me-2" type="search" name="q" placeholder="Search..." aria-label="Search" required />
+        <button class="btn border" type="submit"><i class="fa-solid fa-magnifying-glass"></i>Search</button>
+      </form>
+
+      <div class="navbar-nav ms-auto">
+        <% if (currUser) { %>
+          <a class="nav-link" href="/user/logout">LogOut</a>
+          <% } %>
+            <% if (!currUser) { %>
+              <a class="nav-link active" aria-current="page" href="/user/login">Login</a>
+              <a class="nav-link" href="/user/signup">SignUp</a>
+              <% } %>
+
       </div>
     </div>
   </div>
